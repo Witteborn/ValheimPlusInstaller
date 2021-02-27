@@ -13,9 +13,6 @@ namespace ValheimPlusInstaller
 
         private static async Task Main(string[] args)
         {
-
-            //SelfUpdater();
-
             try
             {
                 Console.WriteLine("Loading config");
@@ -42,16 +39,6 @@ namespace ValheimPlusInstaller
 
             Console.ReadKey();
         }
-
-        //private static void SelfUpdater()
-        //{
-        //    DownloadManager downloadManager = new();
-        //    downloadManager.AddDownloadProgressChangedEventHandler(DownloadProgressChanged);
-        //    downloadManager.AddDownloadFileCompletedEventHandler(DownloadFileCompleted);
-
-        //    Console.WriteLine("Beginn downloading the latest release");
-        //    downloadManager.DownloadFile(Config.DownloadUrl, Config.DownloadLocation);
-        //}
 
         private static void BackupSaveFile()
         {
