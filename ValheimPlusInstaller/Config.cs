@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 namespace ValheimPlusInstaller
 {
@@ -13,10 +14,11 @@ namespace ValheimPlusInstaller
         public string SaveFileLocation { get; private set; }
         public string BackupFile { get; private set; }
         public string GameLocation { get; private set; }
-
+        public string Platform { get; private set; }
 
         public async Task LoadAsync() {
 
+            Platform = GetPlatform();
             string configFile = CreateConfig();
             string appsettingsLocalLow = GetAppsettingsLocalLow();
             string ironGateFolder = Path.Combine(appsettingsLocalLow, "IronGate");
@@ -26,10 +28,45 @@ namespace ValheimPlusInstaller
             BackupFile = Path.Combine(ironGateFolder, "Valheim.zip");
             DownloadDirectory = GetDownloadDirectory();
 
-            bool isServer = GetIsServer(configFile);
-            string filename = isServer ? "WindowsServer.zip" : "WindowsClient.zip";
+
+            string filename = CreateFilename(configFile);
+
             DownloadUrl = await GetDownloadUrlAsync(configFile)+filename;
             DownloadLocation = Path.Combine(DownloadDirectory, filename);
+        }
+
+        private string CreateFilename(string path)
+        {
+            string target = GetIsServer(path) ? "Server": "Client";
+
+            string ending = ".zip";
+
+            return Platform + target + ending;
+
+        }
+
+        private static string GetPlatform()
+        {
+            string platform = string.Empty;
+
+            bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            bool isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+            bool isOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+            bool isUnix = isLinux || isOSX;
+
+            if (isWindows)
+            {
+                platform = "Windows";
+            }
+            else if (isUnix)
+            {
+                platform = "Unix";
+            }
+            else {
+                throw new Exception("Platform not supported");
+            }
+
+            return platform;
         }
 
         private static bool GetIsServer(string path)
@@ -50,9 +87,8 @@ namespace ValheimPlusInstaller
         {
             return Path.Combine(
                          Directory.GetParent(
-                             Environment.GetFolderPath(Environment.SpecialFolder.Desktop)
+                             Environment.GetFolderPath(Environment.SpecialFolder.InternetCache)
                              ).ToString()
-                         , "Downloads"
                          );
         }
 
