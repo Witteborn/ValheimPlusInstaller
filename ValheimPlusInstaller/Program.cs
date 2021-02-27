@@ -26,9 +26,12 @@ namespace ValheimPlusInstaller
                 return;
             }
 
-            Console.WriteLine("Backing up save files");
-            BackupSaveFile();
-            Console.WriteLine("Save files backed up");
+            if (Config.Platform.Equals("Windows"))
+            {
+                Console.WriteLine("Backing up save files");
+                BackupSaveFile();
+                Console.WriteLine("Save files backed up");
+            }
 
             DownloadManager downloadManager = new();
             downloadManager.AddDownloadProgressChangedEventHandler(DownloadProgressChanged);
