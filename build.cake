@@ -4,7 +4,7 @@
 
 var target = Argument("target", "Publish");
 var configuration = Argument("configuration", "Release");
-var solutionName = "Template";
+var solutionName = "ValheimPlusInstaller";
 var solutionFolder = "./";
 var outputFolder = "./artifacts";
 
