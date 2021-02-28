@@ -1,39 +1,34 @@
 ﻿using System;
 using System.ComponentModel;
 using System.Net;
+using System.Threading.Tasks;
 
 namespace ValheimPlusInstaller
 {
-    public class DownloadManager
+    public abstract class DownloadManager
     {
-        //public DownloadProgressChangedEventHandler DownloadProgressChanged { get; set; }
-        //public AsyncCompletedEventHandler DownloadFileCompleted { get; set; }
-        public WebClient Downloader { get; set; } = new WebClient();
+        private WebClient Downloader { get; set; } = new WebClient();
+        protected Config Config { get; set; }
 
-        public DownloadManager()
+        public DownloadManager(Config config)
         {
+            Config = config;
             // fake as if you are a browser making the request.
             Downloader.Headers.Add("User-Agent", "Mozilla/4.0 (compatible; MSIE 8.0)");
+            Downloader.DownloadFileCompleted += OnDownloadFileCompleted;
+            Downloader.DownloadProgressChanged += OnDownloadProgressChanged;
         }
 
-        public void AddDownloadProgressChangedEventHandler(DownloadProgressChangedEventHandler eventHandler )
-        {
-            Downloader.DownloadProgressChanged += eventHandler;
-        }
+        protected abstract void OnDownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e);
+        protected abstract void OnDownloadFileCompleted(object sender, AsyncCompletedEventArgs e);
 
-        public void AddDownloadFileCompletedEventHandler(AsyncCompletedEventHandler eventHandler)
+        public async Task DownloadFileAsync(string sourceUrl, string targetFolder)
         {
-            Downloader.DownloadFileCompleted += eventHandler;
-        }
-
-        public void DownloadFile(string sourceUrl, string targetFolder)
-        {
+            Console.WriteLine("Beginn downloading the latest release");
             Console.WriteLine($"Downloading\n" +
-                $"From {sourceUrl}\n" +
-                $"To {targetFolder}");
-            Downloader.DownloadFileAsync(new Uri(sourceUrl), targetFolder);
-            // wait for the current thread to complete, since the an async action will be on a new thread.
-            while (Downloader.IsBusy) { }
+                              $"From {sourceUrl}\n" +
+                              $"To {targetFolder}");
+            await Downloader.DownloadFileTaskAsync(new Uri(sourceUrl), targetFolder);
         }
     }
 }

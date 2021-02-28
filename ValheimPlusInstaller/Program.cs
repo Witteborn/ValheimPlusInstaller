@@ -1,8 +1,7 @@
 ﻿using System;
-using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
-using System.Net;
 using System.Threading.Tasks;
 
 namespace ValheimPlusInstaller
@@ -26,6 +25,8 @@ namespace ValheimPlusInstaller
                 return;
             }
 
+            await UpdateIfNeededAsync();
+
             if (Config.Platform.Equals("Windows"))
             {
                 Console.WriteLine("Backing up save files");
@@ -33,19 +34,56 @@ namespace ValheimPlusInstaller
                 Console.WriteLine("Save files backed up");
             }
 
-            DownloadManager downloadManager = new();
-            downloadManager.AddDownloadProgressChangedEventHandler(DownloadProgressChanged);
-            downloadManager.AddDownloadFileCompletedEventHandler(DownloadFileCompleted);
+            ModUpdater modUpdater = new ModUpdater(Config);
 
-            Console.WriteLine("Beginn downloading the latest release");
-            downloadManager.DownloadFile(Config.DownloadUrl, Config.DownloadLocation);
+            await modUpdater.DownloadFileAsync(Config.ReleaseURLMod, Config.DownloadLocationMod);
 
             Console.ReadKey();
         }
 
+        private static async Task UpdateIfNeededAsync()
+        {
+            SelfUpdater selfUpdater = new SelfUpdater(Config);
+            if (selfUpdater.IsUpdateAvailable())
+            {
+                Console.WriteLine("A newer version of this program (not the mod) is available.");
+                Console.Write("Would you like to update to the latest release? (y/n):");
+                char answer = Console.ReadLine()[0];
+                Console.WriteLine();
+
+                if (answer.Equals('y'))
+                {
+                    Console.WriteLine("Updating...");
+                    await selfUpdater.DownloadFileAsync(Config.ReleaseURLInstaller, Config.DownloadLocationInstaller);
+
+                    Console.WriteLine("\nDownload Completed");
+                    Console.WriteLine("Please update the rest manually");
+
+                    var downloadFolder = Directory.GetParent(
+                            Config.DownloadLocationInstaller
+                            ).ToString();
+
+
+                    Process.Start(new ProcessStartInfo()
+                    {
+                        FileName = downloadFolder,
+                        UseShellExecute = true,
+                        Verb = "open"
+                    });
+
+                    Environment.Exit(0);
+                }
+                else
+                {
+                    Console.WriteLine("Keeping current version");
+                }
+            }
+        }
+
         private static void BackupSaveFile()
         {
-            if (File.Exists(Config.BackupFile)) {
+            if (File.Exists(Config.BackupFile))
+            {
                 File.Delete(Config.BackupFile);
             }
 
@@ -55,36 +93,6 @@ namespace ValheimPlusInstaller
                 CompressionLevel.Optimal,
                 false   // Include parent dir in zip?
                 );
-        }
-
-
-        private static void DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
-        {
-            Console.WriteLine($"Progress: {e.ProgressPercentage}%");
-        }
-
-        private static void DownloadFileCompleted(object sender, AsyncCompletedEventArgs e)
-        {
-            // display completion status.
-            bool errorOccured = e.Error != null;
-            if (errorOccured)
-            {
-                Console.WriteLine(e.Error.Message);
-                Console.WriteLine(e.Error.StackTrace);
-            }
-            else
-            {
-                Console.WriteLine("\nDownload Completed");
-                InstallMod();
-            }
-        }
-
-
-        internal static void InstallMod()
-        {
-            Console.WriteLine($"Installing mod to {Config.GameLocation}");
-            ZipFile.ExtractToDirectory(Config.DownloadLocation, Config.GameLocation, true);
-            Console.WriteLine("Mod installed");
         }
     }
 }
